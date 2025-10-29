@@ -30,10 +30,10 @@ static void can2040_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *
 
         for(int j = 0; j < msg_size; j++)
         {
-            if(j == 0) {printf('MSG Received: ');}
+            if(j == 0) {printf("MSG RCVD: ");}
             else
             {
-                printf('%c', );
+                printf("%c\n", msg->data[j]);
             }
         }
     }
