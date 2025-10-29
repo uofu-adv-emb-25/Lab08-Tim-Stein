@@ -2,6 +2,17 @@
 #include <hardware/regs/intctrl.h>
 #include <stdio.h>
 #include <pico/stdlib.h>
+#include <FreeRTOS.h>
+#include "task.h"
+#include "pico/multicore.h"
+#include "pico/cyw43_arch.h"
+
+#define MAIN_TASK_PRIORITY (tskIDLE_PRIORITY + 4UL)
+#define HIGH_PRIORITY_TASK_PRIORITY (tskIDLE_PRIORITY + 3UL)
+#define MEDIUM_PRIORITY_TASK_PRIORITY (tskIDLE_PRIORITY + 2UL)
+#define LOW_PRIORITY_TASK_PRIORITY (tskIDLE_PRIORITY + 1UL)
+#define MAIN_TASK_STACK_SIZE configMINIMAL_STACK_SIZE
+#define PRIORITY_TASK_STACK_SIZE configMINIMAL_STACK_SIZE
 
 static struct can2040 cbus;
 
@@ -34,6 +45,35 @@ void canbus_setup(void)
     can2040_start(&cbus, sys_clock, bitrate, gpio_rx, gpio_tx);
 }
 
+void CanTransmitTask(void *pvParams)
+{
+    struct can2040_msg msg;
+    while(1)
+    {
+        msg.id = 0x11;
+        msg.dlc = 5; // hello is 5 bytes
+        
+        msg.data[0] = 'h';
+        msg.data[1] = 'e';
+        msg.data[2] = 'l';
+        msg.data[3] = 'l';
+        msg.data[4] = 'o';
+        msg.data[5] = 0;
+        msg.data[6] = 0;
+        msg.data[7] = 0;
+
+        (void) can2040_transmit(&cbus, &msg);
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+}
+
 int main(){
+    stdio_init_all();
+    sleep_ms(5000);
     canbus_setup();
+
+    xTaskCreate(CanTransmitTask, "low_priority_thread", PRIORITY_TASK_STACK_SIZE, NULL, LOW_PRIORITY_TASK_PRIORITY, NULL);
+    vTaskStartScheduler(); 
+
+    return 0;
 }
