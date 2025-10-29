@@ -18,7 +18,25 @@ static struct can2040 cbus;
 
 static void can2040_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg)
 {
-    // Put your code here....
+    if(CAN2040_NOTIFY_RX == notify)
+    {
+        char received[8];
+        uint16_t msg_size = (msg->dlc);
+
+        for(int i = 0; i < msg_size; i++)
+        {
+            received[i] = (char) msg->data[i];
+        }
+
+        for(int j = 0; j < msg_size; j++)
+        {
+            if(j == 0) {printf('MSG Received: ');}
+            else
+            {
+                printf('%c', );
+            }
+        }
+    }
 }
 
 static void PIOx_IRQHandler(void)
