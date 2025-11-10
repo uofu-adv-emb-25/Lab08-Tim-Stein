@@ -16,7 +16,7 @@
 #define PRIORITY_TASK_STACK_SIZE configMINIMAL_STACK_SIZE
 
 static struct can2040 cbus;
-static xQueueHandle_t queue;
+static QueueHandle_t queue;
 
 static void can2040_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg)
 {
@@ -54,22 +54,18 @@ void canbus_setup(void)
 
 void CanTransmitTask(void *pvParams)
 {
-    struct can2040_msg msg;
-    while(1)
-    {
-        msg.id = 0x11;
-        msg.dlc = 5; // hello is 5 bytes
-        
-        msg.data[0] = 'h';
-        msg.data[1] = 'e';
-        msg.data[2] = 'l';
-        msg.data[3] = 'l';
-        msg.data[4] = 'o';
-        msg.data[5] = 0;
-        msg.data[6] = 0;
-        msg.data[7] = 0;
+    struct can2040_msg msg = {0};
+    msg.id  = 0x11;
+    msg.dlc = 5; // "hello"
 
-        (void) can2040_transmit(&cbus, &msg);
+    msg.data[0] = 'h';
+    msg.data[1] = 'e';
+    msg.data[2] = 'l';
+    msg.data[3] = 'l';
+    msg.data[4] = 'o';
+
+    for (;;) {
+        (void)can2040_transmit(&cbus, &msg);
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
@@ -77,35 +73,30 @@ void CanTransmitTask(void *pvParams)
 
 void messageTask(void *pvParams)
 {
-    // need to pull from queue here
-        char received[8];
-        uint16_t msg_size = queue.
+    struct can2040_msg rx;
+    for (;;) {
 
-        for(int i = 0; i < 8; i++)
-        {
-            if(i < 5) {received[i] = (char) msg->data[i]};
-            else
+        if (xQueueReceive(queue, &rx, portMAX_DELAY) == pdTRUE) {
+            char buf[9] = {0};
+            size_t n = (rx.dlc <= 8) ? rx.dlc : 8;
+            for (size_t i = 0; i < n; ++i) 
             {
-                recieved[i] = (char) 0;
+                buf[i] = (char)rx.data[i];
             }
+            buf[n] = '\0';
+            printf("RX ID=0x%08lx DLC=%u Data='%s'\n", (unsigned long)rx.id, rx.dlc, buf);
         }
-
-        for(int j = 0; j < msg_size; j++)
-        {
-            if(j == 0)
-            {
-                printf("MSG RCVD: ");
-                printf("%c\n", msg->data[j]);
-            }
-        }
+    }
 }
 
 
 int main(){
     stdio_init_all();
     sleep_ms(5000);
-    canbus_setup();
+
     xQueueCreate(10, sizeof( uint8_t ) );
+    configASSERT(queue != NULL);
+    canbus_setup();
 
     xTaskCreate(messageTask, "receieve_thread", PRIORITY_TASK_STACK_SIZE, NULL, LOW_PRIORITY_TASK_PRIORITY, NULL);
     xTaskCreate(CanTransmitTask, "transmit_thread", PRIORITY_TASK_STACK_SIZE, NULL, MEDIUM_PRIORITY_TASK_PRIORITY, NULL);
