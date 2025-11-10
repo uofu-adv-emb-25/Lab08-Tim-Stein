@@ -30,9 +30,9 @@ static void can2040_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *
 
         for(int j = 0; j < msg_size; j++)
         {
-            if(j == 0) {printf("MSG RCVD: ");}
-            else
+            if(j == 0)
             {
+                printf("MSG RCVD: ");
                 printf("%c\n", msg->data[j]);
             }
         }
@@ -90,7 +90,7 @@ int main(){
     sleep_ms(5000);
     canbus_setup();
 
-    xTaskCreate(CanTransmitTask, "low_priority_thread", PRIORITY_TASK_STACK_SIZE, NULL, LOW_PRIORITY_TASK_PRIORITY, NULL);
+    xTaskCreate(CanTransmitTask, "transmit_thread", PRIORITY_TASK_STACK_SIZE, NULL, MEDIUM_PRIORITY_TASK_PRIORITY, NULL)
     vTaskStartScheduler(); 
 
     return 0;
