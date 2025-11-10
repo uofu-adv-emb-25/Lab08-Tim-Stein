@@ -56,7 +56,7 @@ void CanTransmitTask(void *pvParams)
 {
     struct can2040_msg msg = {0};
     msg.id  = 0x11;
-    msg.dlc = 5; // "hello"
+    msg.dlc = 5;
 
     msg.data[0] = 'h';
     msg.data[1] = 'e';
@@ -79,10 +79,12 @@ void messageTask(void *pvParams)
         if (xQueueReceive(queue, &rx, portMAX_DELAY) == pdTRUE) {
             char buf[9] = {0};
             size_t n = (rx.dlc <= 8) ? rx.dlc : 8;
+
             for (size_t i = 0; i < n; ++i) 
             {
                 buf[i] = (char)rx.data[i];
             }
+
             buf[n] = '\0';
             printf("RX ID=0x%08lx DLC=%u Data='%s'\n", (unsigned long)rx.id, rx.dlc, buf);
         }
@@ -94,11 +96,11 @@ int main(){
     stdio_init_all();
     sleep_ms(5000);
 
-    xQueueCreate(10, sizeof( uint8_t ) );
+    queue = xQueueCreate(10, sizeof(struct can2040_msg));
     configASSERT(queue != NULL);
     canbus_setup();
 
-    xTaskCreate(messageTask, "receieve_thread", PRIORITY_TASK_STACK_SIZE, NULL, LOW_PRIORITY_TASK_PRIORITY, NULL);
+    // xTaskCreate(messageTask, "receieve_thread", PRIORITY_TASK_STACK_SIZE, NULL, MEDIUM_PRIORITY_TASK_PRIORITY, NULL);
     xTaskCreate(CanTransmitTask, "transmit_thread", PRIORITY_TASK_STACK_SIZE, NULL, MEDIUM_PRIORITY_TASK_PRIORITY, NULL);
     vTaskStartScheduler(); 
 
