@@ -6,6 +6,7 @@
 #include "task.h"
 #include "pico/multicore.h"
 #include "pico/cyw43_arch.h"
+#include "queue.h"
 
 #define MAIN_TASK_PRIORITY (tskIDLE_PRIORITY + 4UL)
 #define HIGH_PRIORITY_TASK_PRIORITY (tskIDLE_PRIORITY + 3UL)
@@ -15,28 +16,16 @@
 #define PRIORITY_TASK_STACK_SIZE configMINIMAL_STACK_SIZE
 
 static struct can2040 cbus;
+static xQueueHandle_t queue;
 
 static void can2040_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg)
 {
     if(CAN2040_NOTIFY_RX == notify)
     {
-        char received[8];
-        uint16_t msg_size = (msg->dlc);
-
-        for(int i = 0; i < msg_size; i++)
-        {
-            received[i] = (char) msg->data[i];
-        }
-
-        for(int j = 0; j < msg_size; j++)
-        {
-            if(j == 0)
-            {
-                printf("MSG RCVD: ");
-                printf("%c\n", msg->data[j]);
-            }
-        }
-    }
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xQueueSendFromISR(queue, msg, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }     
 }
 
 static void PIOx_IRQHandler(void)
@@ -85,12 +74,41 @@ void CanTransmitTask(void *pvParams)
     }
 }
 
+
+void messageTask(void *pvParams)
+{
+    // need to pull from queue here
+        char received[8];
+        uint16_t msg_size = queue.
+
+        for(int i = 0; i < 8; i++)
+        {
+            if(i < 5) {received[i] = (char) msg->data[i]};
+            else
+            {
+                recieved[i] = (char) 0;
+            }
+        }
+
+        for(int j = 0; j < msg_size; j++)
+        {
+            if(j == 0)
+            {
+                printf("MSG RCVD: ");
+                printf("%c\n", msg->data[j]);
+            }
+        }
+}
+
+
 int main(){
     stdio_init_all();
     sleep_ms(5000);
     canbus_setup();
+    xQueueCreate(10, sizeof( uint8_t ) );
 
-    xTaskCreate(CanTransmitTask, "transmit_thread", PRIORITY_TASK_STACK_SIZE, NULL, MEDIUM_PRIORITY_TASK_PRIORITY, NULL)
+    xTaskCreate(messageTask, "receieve_thread", PRIORITY_TASK_STACK_SIZE, NULL, LOW_PRIORITY_TASK_PRIORITY, NULL);
+    xTaskCreate(CanTransmitTask, "transmit_thread", PRIORITY_TASK_STACK_SIZE, NULL, MEDIUM_PRIORITY_TASK_PRIORITY, NULL);
     vTaskStartScheduler(); 
 
     return 0;
