@@ -59,7 +59,7 @@ void canbus_setup(void)
 void CanTransmitTask(void *pvParams)
 {
     struct can2040_msg msg;
-    msg.id  = LOW_PRIO;
+    msg.id  = HIGH_PRIO;
     msg.dlc = 8;
 
     msg.data[0] = 'h';
@@ -74,7 +74,8 @@ void CanTransmitTask(void *pvParams)
         {
             printf("Failed: No space for msg to be queued");
         }
-        vTaskDelay(pdMS_TO_TICKS(MSG_SLOW));
+        //vTaskDelay(pdMS_TO_TICKS(MSG_SLOW));
+        for (volatile uint32_t i = 0; i < 100000; i++) {}
     }
 }
 
