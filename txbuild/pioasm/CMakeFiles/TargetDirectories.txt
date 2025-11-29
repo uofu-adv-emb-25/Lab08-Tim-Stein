@@ -1,0 +1,7 @@
+/Users/stein/adv-emb/lab8/txbuild/pioasm/CMakeFiles/pioasm.dir
+/Users/stein/adv-emb/lab8/txbuild/pioasm/CMakeFiles/edit_cache.dir
+/Users/stein/adv-emb/lab8/txbuild/pioasm/CMakeFiles/rebuild_cache.dir
+/Users/stein/adv-emb/lab8/txbuild/pioasm/CMakeFiles/list_install_components.dir
+/Users/stein/adv-emb/lab8/txbuild/pioasm/CMakeFiles/install.dir
+/Users/stein/adv-emb/lab8/txbuild/pioasm/CMakeFiles/install/local.dir
+/Users/stein/adv-emb/lab8/txbuild/pioasm/CMakeFiles/install/strip.dir

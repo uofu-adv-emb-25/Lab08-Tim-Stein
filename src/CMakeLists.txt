@@ -8,7 +8,7 @@ pico_set_program_version(lab8 "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB.
 # These are mutually exclusive, only set one.
-pico_enable_stdio_uart(lab8 1)
+pico_enable_stdio_uart(lab8 0)
 pico_enable_stdio_usb(lab8 1)
 
 # Add the libraries to the build
@@ -16,8 +16,8 @@ target_link_libraries(lab8 PRIVATE
   pico_stdlib
   pico_multicore
   pico_async_context_freertos
-  FreeRTOS-Kernel-Heap4
   can2040
+  FreeRTOS-Kernel-Heap4
 )
 
 # The CYW43 is the Wifi/Bluetooth module. If the board is set to pico_w, this

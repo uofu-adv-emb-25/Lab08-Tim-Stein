@@ -1,4 +1,5 @@
 #include <can2040.h>
+#include <stdlib.h>
 #include <hardware/regs/intctrl.h>
 #include <stdio.h>
 #include <pico/stdlib.h>
@@ -20,11 +21,9 @@ static QueueHandle_t queue;
 
 static void can2040_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg)
 {
-    if(CAN2040_NOTIFY_RX == notify)
-    {
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        xQueueSendFromISR(queue, msg, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    if(notify & CAN2040_NOTIFY_RX)
+    {        
+        xQueueSendFromISR(queue, msg, NULL);
     }     
 }
 
@@ -37,7 +36,7 @@ void canbus_setup(void)
 {
     uint32_t pio_num = 0;
     uint32_t sys_clock = 125000000, bitrate = 500000;
-    uint32_t gpio_rx = 5, gpio_tx = 4;
+    uint32_t gpio_rx = 4, gpio_tx = 5;
 
     // Setup canbus
     can2040_setup(&cbus, pio_num);
@@ -54,9 +53,9 @@ void canbus_setup(void)
 
 void CanTransmitTask(void *pvParams)
 {
-    struct can2040_msg msg = {0};
-    msg.id  = 0x11;
-    msg.dlc = 5;
+    struct can2040_msg msg;
+    msg.id  = 1;
+    msg.dlc = 8;
 
     msg.data[0] = 'h';
     msg.data[1] = 'e';
@@ -64,29 +63,35 @@ void CanTransmitTask(void *pvParams)
     msg.data[3] = 'l';
     msg.data[4] = 'o';
 
-    for (;;) {
-        (void)can2040_transmit(&cbus, &msg);
-        vTaskDelay(pdMS_TO_TICKS(500));
+    while(1)
+    {
+        if(can2040_transmit(&cbus, &msg) < 0)
+        {
+            printf("Failed: No space for msg to be queued");
+        }
+        vTaskDelay(pdMS_TO_TICKS(2000));
+
     }
 }
 
 
-void messageTask(void *pvParams)
+void CanReceiveTask(void *pvParams)
 {
-    struct can2040_msg rx;
-    for (;;) {
+    struct can2040_msg rcvdMsg;  
+    while(1)
+    {
+        if (xQueueReceive(queue, &rcvdMsg, portMAX_DELAY) == pdTRUE) {
+            
+            char buf[9];
+            uint8_t len = rcvdMsg.dlc;
 
-        if (xQueueReceive(queue, &rx, portMAX_DELAY) == pdTRUE) {
-            char buf[9] = {0};
-            size_t n = (rx.dlc <= 8) ? rx.dlc : 8;
-
-            for (size_t i = 0; i < n; ++i) 
+            for (uint8_t i = 0; i < len; i++) 
             {
-                buf[i] = (char)rx.data[i];
+                buf[i] = (char)rcvdMsg.data[i];
             }
 
-            buf[n] = '\0';
-            printf("RX ID=0x%08lx DLC=%u Data='%s'\n", (unsigned long)rx.id, rx.dlc, buf);
+            buf[len] = '\0';
+            printf("MSG ID= %lu DLC=%u Data='%s'\n", (unsigned long) rcvdMsg.id, rcvdMsg.dlc, buf);
         }
     }
 }
@@ -96,12 +101,12 @@ int main(){
     stdio_init_all();
     sleep_ms(5000);
 
-    queue = xQueueCreate(10, sizeof(struct can2040_msg));
+    queue = xQueueCreate(64, sizeof(struct can2040_msg));
     configASSERT(queue != NULL);
     canbus_setup();
 
-    xTaskCreate(messageTask, "receieve_thread", PRIORITY_TASK_STACK_SIZE, NULL, MEDIUM_PRIORITY_TASK_PRIORITY, NULL);
-    //xTaskCreate(CanTransmitTask, "transmit_thread", PRIORITY_TASK_STACK_SIZE, NULL, MEDIUM_PRIORITY_TASK_PRIORITY, NULL);
+    //xTaskCreate(CanReceiveTask, "receieve_thread", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1UL, NULL);
+    xTaskCreate(CanTransmitTask, "transmit_thread", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1UL, NULL);
     vTaskStartScheduler(); 
 
     return 0;
