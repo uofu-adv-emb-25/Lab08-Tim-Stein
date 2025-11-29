@@ -1,6 +1,6 @@
 # This is the main binary. List your C files here.
 add_executable(lab8
-    lab8.c
+    babbling.c
     )
 
 pico_set_program_name(lab8 "test")
