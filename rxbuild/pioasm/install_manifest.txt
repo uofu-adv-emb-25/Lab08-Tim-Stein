@@ -1,0 +1,5 @@
+/Users/stein/adv-emb/lab8/rxbuild/pioasm-install/pioasm/pioasm
+/Users/stein/adv-emb/lab8/rxbuild/pioasm-install/pioasm/pioasmTargets.cmake
+/Users/stein/adv-emb/lab8/rxbuild/pioasm-install/pioasm/pioasmTargets-release.cmake
+/Users/stein/adv-emb/lab8/rxbuild/pioasm-install/pioasm/pioasmConfig.cmake
+/Users/stein/adv-emb/lab8/rxbuild/pioasm-install/pioasm/pioasmConfigVersion.cmake

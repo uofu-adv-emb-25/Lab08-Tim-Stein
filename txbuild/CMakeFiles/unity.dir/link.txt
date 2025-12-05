@@ -1,0 +1,2 @@
+/Applications/ArmGNUToolchain/14.3.rel1/arm-none-eabi/bin/arm-none-eabi-ar qc libunity.a CMakeFiles/unity.dir/Users/stein/Unity/src/unity.c.o
+/Applications/ArmGNUToolchain/14.3.rel1/arm-none-eabi/bin/arm-none-eabi-ranlib libunity.a
